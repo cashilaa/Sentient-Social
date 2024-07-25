@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block content %}
+    <h1 class="text-3xl font-bold mb-8">Welcome to Sentient Social Media</h1>
+
+    <div class="bg-white p-6 rounded-lg shadow-md mb-8">
+        <h2 class="text-2xl font-semibold mb-4">Create Post</h2>
+        <form action="{{ url_for('create_post') }}" method="post" enctype="multipart/form-data" class="space-y-4">
+            <textarea name="content" rows="4" class="w-full p-2 border rounded" placeholder="What's on your mind?"></textarea>
+            <input type="file" name="media" accept="image/*,video/*">
+            <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Post</button>
+        </form>
+    </div>
+
+    {% for post in posts %}
+        <div class="bg-white p-6 rounded-lg shadow-md mb-6">
+            <p class="text-lg mb-4">{{ post.content }}</p>
+            {% if post.media_url %}
+                {% if post.media_type == 'image' %}
+                    <img src="{{ post.media_url }}" alt="Post image" class="mb-4">
+                {% else %}
+                    <video src="{{ post.media_url }}" controls class="mb-4"></video>
+                {% endif %}
+            {% endif %}
+            <p class="text-sm text-gray-600 mb-2">Posted by <a href="{{ url_for('profile', username=post.author.username) }}" class="text-blue-500 hover:underline">{{ post.author.username }}</a></p>
+            
+            <form action="{{ url_for('like_post', post_id=post.id) }}" method="post" class="inline">
+                <button type="submit" class="text-blue-500 hover:underline">Like ({{ post.likes|length }})</button>
+            </form>
+
+            <h3 class="text-lg font-semibold mt-4 mb-2">Comments:</h3>
+            {% for comment in post.comments %}
+                <div class="bg-gray-100 p-3 rounded mb-2">
+                    <p><span class="font-semibold">{{ comment.user.username }}:</span> {{ comment.content }}</p>
+                </div>
+            {% endfor %}
+
+            <form action="{{ url_for('comment_post', post_id=post.id) }}" method="post" class="mt-4">
+                <input type="text" name="content" class="w-full p-2 border rounded" placeholder="Add a comment...">
+                <button type="submit" class="mt-2 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Comment</button>
+            </form>
+        </div>
+    {% endfor %}
+{% endblock %}

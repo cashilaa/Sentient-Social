@@ -1,0 +1,14 @@
+Flask
+Flask-Login
+Flask-SQLAlchemy
+google-generativeai
+python-dotenv
+Werkzeug
+gunicorn
+opencv-python
+Pillow
+numpy
+pandas
+pytz
+Flask-WTF
+
