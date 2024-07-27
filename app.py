@@ -128,6 +128,9 @@ def create_post():
     content = request.form.get('content')
     file = request.files.get('media')
     
+    media_url = None
+    media_type = None
+    
     if file and allowed_file(file.filename):
         filename = secure_filename(file.filename)
         file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
@@ -139,18 +142,15 @@ def create_post():
             resize_image(file_path)
         elif media_type == 'video':
             resize_video(file_path)
-    else:
-        media_url = None
-        media_type = None
 
-    print(f"Calling generate_and_check_content with: content={content}, user_id={g.user.id}, media_url={media_url}")
-    result = bot.generate_and_check_content(content, g.user.id, media_url)
+    print(f"Calling generate_and_check_content with: content={content}, user_id={g.user.id}")
+    result = bot.generate_and_check_content(content, g.user.id)
     print(f"Result from generate_and_check_content: {result}")
-
+    
     if result is None:
         flash("An error occurred while processing your post. Please try again.", 'error')
         return redirect(url_for('index'))
-
+    
     success, message = result
     if success:
         new_post = Post(content=message, user_id=g.user.id, media_url=media_url, media_type=media_type)
@@ -161,7 +161,7 @@ def create_post():
         flash(message, 'error')
         if media_url:
             os.remove(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-
+    
     return redirect(url_for('index'))
 
 @app.route('/like/<int:post_id>', methods=['POST'])
