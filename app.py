@@ -386,8 +386,8 @@ def follow(username):
     if user is None:
         flash('User not found.', 'error')
         return redirect(url_for('index'))
-    if user.id == g.user.id:
-        flash('You cannot follow yourself!',)
+    if user == g.user:
+        flash('You cannot follow yourself!', 'error')
         return redirect(url_for('profile', username=username))
     g.user.follow(user)
     db.session.commit()
@@ -401,7 +401,7 @@ def unfollow(username):
     if user is None:
         flash('User not found.', 'error')
         return redirect(url_for('index'))
-    if user.id == g.user.id:
+    if user == g.user:
         flash('You cannot unfollow yourself!', 'error')
         return redirect(url_for('profile', username=username))
     g.user.unfollow(user)
