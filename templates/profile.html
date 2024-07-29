@@ -10,10 +10,10 @@
         </div>
     </div>
 
-    <p>Followers: {{ user.followers.count() }} | Following: {{ user.followed.count() }}</p>
+    <p class="mb-4">Followers: {{ user.followers.count() }} | Following: {{ user.followed.count() }}</p>
 
     {% if g.user and g.user.id == user.id %}
-        <a href="{{ url_for('edit_profile') }}" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">Edit Profile</a>
+        <a href="{{ url_for('edit_profile') }}" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 mb-4 inline-block">Edit Profile</a>
     {% elif g.user %}
         {% if g.user.is_following(user) %}
             <form action="{{ url_for('unfollow', username=user.username) }}" method="post" class="inline">
