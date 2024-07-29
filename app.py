@@ -64,6 +64,25 @@ def resize_video(file_path):
         cap.release()
         os.replace(file_path + '_temp.mp4', file_path)
 
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
+
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+def save_picture(form_picture):
+    random_hex = secrets.token_hex(8)
+    _, f_ext = os.path.splitext(form_picture.filename)
+    picture_fn = random_hex + f_ext
+    picture_path = os.path.join(current_app.root_path, 'static/profile_pics', picture_fn)
+
+    output_size = (150, 150)
+    i = Image.open(form_picture)
+    i.thumbnail(output_size)
+    i.save(picture_path)
+
+    return picture_fn
+
 @app.before_request
 def load_user():
     g.user = None
@@ -249,28 +268,34 @@ def unfollow(username):
     flash(f'You have unfollowed {username}.', 'success')
     return redirect(url_for('profile', username=username))
 
+
+
 @app.route('/update_profile_picture', methods=['POST'])
 @login_required
 def update_profile_picture():
     if 'profile_picture' not in request.files:
-        flash('No file part')
+        flash('No file part', 'error')
         return redirect(url_for('profile', username=current_user.username))
+    
     file = request.files['profile_picture']
+    
     if file.filename == '':
-        flash('No selected file')
+        flash('No selected file', 'error')
         return redirect(url_for('profile', username=current_user.username))
+    
     if file and allowed_file(file.filename):
-        filename = secure_filename(file.filename)
-        file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        file.save(file_path)
-        current_user.profile_picture = file_path
-        db.session.commit()
-        flash('Profile picture updated successfully')
-    return redirect(url_for('profile', username=current_user.username))
+        try:
+            picture_file = save_picture(file)
+            current_user.profile_picture = picture_file
+            db.session.commit()
+            flash('Your profile picture has been updated!', 'success')
+        except Exception as e:
+            db.session.rollback()
+            flash(f'An error occurred while updating your profile picture: {str(e)}', 'error')
+    else:
+        flash('Allowed file types are png, jpg, jpeg, gif', 'error')
 
-def allowed_file(filename):
-    return '.' in filename and \
-           filename.rsplit('.', 1)[1].lower() in {'png', 'jpg', 'jpeg', 'gif'}
+    return redirect(url_for('profile', username=current_user.username))
 
 @app.route('/delete_post/<int:post_id>', methods=['POST'])
 @login_required
