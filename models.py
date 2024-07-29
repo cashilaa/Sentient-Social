@@ -13,7 +13,7 @@ class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
     password = db.Column(db.String(120), nullable=False)
-    profile_picture = db.Column(db.String(20), nullable=False, default='default.jpg')
+
     
     # Relationships
     posts = db.relationship('Post', backref='author', lazy='dynamic')
