@@ -3,11 +3,14 @@ from flask_sqlalchemy import SQLAlchemy
 from models import ChatMessage, db, User, Post, Like, Comment
 from main import AIContentBot
 import os
+from werkzeug.utils import secure_filename
 from dotenv import load_dotenv
 from functools import wraps
 from werkzeug.utils import secure_filename
 from PIL import Image
 import cv2
+from sqlalchemy.orm import joinedload
+from flask_login import current_user
 
 load_dotenv()
 
@@ -207,13 +210,15 @@ def comment_post(post_id):
     
     return redirect(url_for('index'))
 
+
+
 @app.route('/profile/<username>')
 def profile(username):
     user = User.query.filter_by(username=username).first_or_404()
-    posts = user.posts.order_by(Post.timestamp.desc()).all()
-    post_count = user.posts.count()
+    posts = Post.query.filter_by(author=user).order_by(Post.timestamp.desc()).options(joinedload(Post.author)).all()
+    post_count = len(posts)  # This avoids an extra query
     return render_template('profile.html', user=user, posts=posts, post_count=post_count)
-
+    
 @app.route('/follow/<username>', methods=['POST'])
 @login_required
 def follow(username):
@@ -243,6 +248,29 @@ def unfollow(username):
     db.session.commit()
     flash(f'You have unfollowed {username}.', 'success')
     return redirect(url_for('profile', username=username))
+
+@app.route('/update_profile_picture', methods=['POST'])
+@login_required
+def update_profile_picture():
+    if 'profile_picture' not in request.files:
+        flash('No file part')
+        return redirect(url_for('profile', username=current_user.username))
+    file = request.files['profile_picture']
+    if file.filename == '':
+        flash('No selected file')
+        return redirect(url_for('profile', username=current_user.username))
+    if file and allowed_file(file.filename):
+        filename = secure_filename(file.filename)
+        file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        file.save(file_path)
+        current_user.profile_picture = file_path
+        db.session.commit()
+        flash('Profile picture updated successfully')
+    return redirect(url_for('profile', username=current_user.username))
+
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in {'png', 'jpg', 'jpeg', 'gif'}
 
 @app.route('/delete_post/<int:post_id>', methods=['POST'])
 @login_required
