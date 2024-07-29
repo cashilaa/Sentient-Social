@@ -16,6 +16,7 @@
                 {% if current_user %}
                     <li><a href="{{ url_for('profile', username=current_user.username) }}" class="text-white hover:text-blue-200">Profile</a></li>
                     <li><a href="{{ url_for('logout') }}" class="text-white hover:text-blue-200">Logout</a></li>
+                    <li><button onclick="openChatbot()" class="text-white hover:text-blue-200">Sentient Ai</button></li>
                 {% else %}
                     <li><a href="{{ url_for('login') }}" class="text-white hover:text-blue-200">Login</a></li>
                     <li><a href="{{ url_for('signup') }}" class="text-white hover:text-blue-200">Signup</a></li>
@@ -37,6 +38,29 @@
 
         {% block content %}{% endblock %}
     </div>
+
+    <!-- Chatbot Modal -->
+    <div id="chatbotModal" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 hidden">
+        <div class="bg-white rounded-lg shadow-lg w-1/2">
+            <div class="flex justify-between items-center p-4 border-b">
+                <h3 class="text-xl font-semibold">Chatbot</h3>
+                <button onclick="closeChatbot()" class="text-red-500">&times;</button>
+            </div>
+            <div class="p-4">
+                <iframe src="https://sentient-ai.onrender.com" class="w-full h-96"></iframe>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function openChatbot() {
+            document.getElementById('chatbotModal').classList.remove('hidden');
+        }
+
+        function closeChatbot() {
+            document.getElementById('chatbotModal').classList.add('hidden');
+        }
+    </script>
 
     <script>
         function showPopup(message, category) {
