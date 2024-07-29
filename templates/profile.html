@@ -5,7 +5,7 @@
   <div class="flex items-center mb-4">
     <div class="w-24 h-24 rounded-full overflow-hidden mr-4">
       {% if user.profile_picture %}
-        <img src="{{ user.profile_picture }}" alt="{{ user.username }}'s profile picture" class="w-full h-full object-cover">
+        <img src="{{ url_for('static', filename='profile_pics/' + user.profile_picture) }}" alt="{{ user.username }}'s profile picture">
       {% else %}
         <img src="/static/default-profile-picture.png" alt="Default profile picture" class="w-full h-full object-cover">
       {% endif %}
@@ -17,7 +17,7 @@
   </div>
 
   {% if current_user.id == user.id %}
-    <form action="{{ url_for('update_profile_picture') }}" method="post" enctype="multipart/form-data" class="mb-4">
+    <form action="{{ url_for('update_profile_picture') }}" method="post" enctype="multipart/form-data">
       <input type="file" name="profile_picture" accept="image/*" class="mb-2">
       <button type="submit" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">Update Profile Picture</button>
     </form>
