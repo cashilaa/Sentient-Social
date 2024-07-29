@@ -1,4 +1,4 @@
-from flask import Flask, request, session, render_template, redirect, url_for, flash, g
+from flask import Flask, request, session, render_template, redirect, url_for, flash, g, current_app
 from flask_sqlalchemy import SQLAlchemy
 from models import ChatMessage, db, User, Post, Like, Comment
 from main import AIContentBot
@@ -6,18 +6,17 @@ import os
 from werkzeug.utils import secure_filename
 from dotenv import load_dotenv
 from functools import wraps
-from werkzeug.utils import secure_filename
 from PIL import Image
 import cv2
 from sqlalchemy.orm import joinedload
 from flask_login import current_user
+import secrets
 
 load_dotenv()
 
-
-
 app = Flask(__name__)
 
+# Configuration
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
 if not app.config['SECRET_KEY']:
     raise ValueError("No SECRET_KEY set for Flask application")
@@ -27,6 +26,7 @@ if not app.config['SQLALCHEMY_DATABASE_URI']:
     raise ValueError("No DATABASE_URI set for Flask application")
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['UPLOAD_FOLDER'] = 'static/uploads'
 
 print(f"SQLALCHEMY_DATABASE_URI: {app.config['SQLALCHEMY_DATABASE_URI']}")
 db.init_app(app)
@@ -34,8 +34,6 @@ db.init_app(app)
 bot = AIContentBot()
 
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'mp4', 'mov'}
-UPLOAD_FOLDER = 'static/uploads'
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 MAX_IMAGE_SIZE = (800, 800)
 MAX_VIDEO_SIZE = (1280, 720)
 
@@ -63,12 +61,6 @@ def resize_video(file_path):
         out.release()
         cap.release()
         os.replace(file_path + '_temp.mp4', file_path)
-
-ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
-
-def allowed_file(filename):
-    return '.' in filename and \
-           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 def save_picture(form_picture):
     random_hex = secrets.token_hex(8)
@@ -229,8 +221,6 @@ def comment_post(post_id):
     
     return redirect(url_for('index'))
 
-
-
 @app.route('/profile/<username>')
 def profile(username):
     user = User.query.filter_by(username=username).first_or_404()
@@ -267,8 +257,6 @@ def unfollow(username):
     db.session.commit()
     flash(f'You have unfollowed {username}.', 'success')
     return redirect(url_for('profile', username=username))
-
-
 
 @app.route('/update_profile_picture', methods=['POST'])
 @login_required
@@ -325,10 +313,10 @@ def internal_error(error):
     db.session.rollback()
     return render_template('500.html'), 500
 
-
 def create_tables():
     with app.app_context():
         db.create_all()
 
 if __name__ == '__main__':
     create_tables()
+    app.run(debug=True)
