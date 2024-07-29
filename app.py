@@ -89,6 +89,18 @@ class Comment(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     post_id = db.Column(db.Integer, db.ForeignKey('post.id'), nullable=False)
     user = db.relationship('User', backref=db.backref('comments', lazy='dynamic'))
+    
+class Notification(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    actor_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    type = db.Column(db.String(20), nullable=False)
+    post_id = db.Column(db.Integer, db.ForeignKey('post.id'))
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    user = db.relationship('User', foreign_keys=[user_id], backref='notifications')
+    actor = db.relationship('User', foreign_keys=[actor_id])
+    post = db.relationship('Post', backref='notifications')
 
 class ChatMessage(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -301,6 +313,7 @@ def create_post():
 @login_required
 def like_post(post_id):
     like = Like.query.filter_by(user_id=g.user.id, post_id=post_id).first()
+    post = Post.query.get_or_404(post_id)
     if like:
         db.session.delete(like)
         db.session.commit()
@@ -308,6 +321,9 @@ def like_post(post_id):
     else:
         new_like = Like(user_id=g.user.id, post_id=post_id)
         db.session.add(new_like)
+        if post.user_id != g.user.id:
+            notification = Notification(user_id=post.user_id, actor_id=g.user.id, type='like', post_id=post_id)
+            db.session.add(notification)
         db.session.commit()
         flash('Post liked', 'success')
     return redirect(url_for('index'))
@@ -330,6 +346,10 @@ def comment_post(post_id):
         if success:
             new_comment = Comment(content=result, user_id=g.user.id, post_id=post_id)
             db.session.add(new_comment)
+            post = Post.query.get_or_404(post_id)
+            if post.user_id != g.user.id:
+                notification = Notification(user_id=post.user_id, actor_id=g.user.id, type='comment', post_id=post_id)
+                db.session.add(notification)
             db.session.commit()
             flash('Comment added successfully', 'success')
         else:
@@ -337,8 +357,8 @@ def comment_post(post_id):
     except Exception as e:
         print(f"Error in comment_post: {str(e)}")
         flash(f"An error occurred: {str(e)}", 'error')
+    return redirect(url_for('index')) 
     
-    return redirect(url_for('index'))
 @app.route('/uploads/<filename>')
 def uploaded_file(filename):
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
@@ -390,6 +410,8 @@ def follow(username):
         flash('You cannot follow yourself!', 'error')
         return redirect(url_for('profile', username=username))
     g.user.follow(user)
+    notification = Notification(user_id=user.id, actor_id=g.user.id, type='follow')
+    db.session.add(notification)
     db.session.commit()
     flash(f'You are now following {username}!', 'success')
     return redirect(url_for('profile', username=username))
@@ -408,6 +430,26 @@ def unfollow(username):
     db.session.commit()
     flash(f'You have unfollowed {username}.', 'success')
     return redirect(url_for('profile', username=username))
+
+@app.route('/notifications')
+@login_required
+def notifications():
+    notifications = Notification.query.filter_by(user_id=g.user.id).order_by(Notification.timestamp.desc()).all()
+    return render_template('notifications.html', notifications=notifications)
+
+@app.route('/delete_notification/<int:notification_id>', methods=['POST'])
+@login_required
+def delete_notification(notification_id):
+    notification = Notification.query.get_or_404(notification_id)
+    if notification.user_id != g.user.id:
+        flash('You can only delete your own notifications.', 'error')
+        return redirect(url_for('notifications'))
+    
+    db.session.delete(notification)
+    db.session.commit()
+    
+    flash('Notification deleted successfully', 'success')
+    return redirect(url_for('notifications'))
 
 @app.route('/delete_post/<int:post_id>', methods=['POST'])
 @login_required
