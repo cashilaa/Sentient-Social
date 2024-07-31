@@ -17,7 +17,7 @@
                     <li><a href="{{ url_for('profile', username=current_user.username) }}" class="text-white hover:text-blue-200">Profile</a></li>
                     <a href="{{ url_for('notifications') }}" class="text-white hover:text-blue-200">Notifications</a>
                     <li><a href="{{ url_for('logout') }}" class="text-white hover:text-blue-200">Logout</a></li>
-                    <li><button onclick="openChatbot()" class="text-white hover:text-blue-200">Sentient Ai</button></li>
+                    <li><button onclick="openChatbot()" class="text-white hover:text-blue-200">Sentient AI</button></li>
                 {% else %}
                     <li><a href="{{ url_for('login') }}" class="text-white hover:text-blue-200">Login</a></li>
                     <li><a href="{{ url_for('signup') }}" class="text-white hover:text-blue-200">Signup</a></li>
